@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>대학가 맞춤 식당 추천 웹앱</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", Roboto, "Noto Sans KR", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px 8px;
+      overflow-x: hidden;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      min-width: 320px;
+      background-color: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 상단 테스트 도구 바 (AGENTS.md 필수) */
+    .test-toolbar {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .test-date-badge {
+      font-weight: 700;
+      background: #1e293b;
+      padding: 5px 10px;
+      border-radius: 8px;
+      color: #38bdf8;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .test-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-test {
+      background-color: #334155;
+      color: #ffffff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-test:active {
+      transform: scale(0.96);
+      background-color: #475569;
+    }
+    .btn-test.btn-reset {
+      background-color: #dc2626;
+    }
+    .btn-test.btn-reset:active {
+      background-color: #b91c1c;
+    }
+
+    /* 본문 영역 */
+    .app-body {
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 카드 기본 스타일 */
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    /* 화면 1: 초기 설정 (입력값) */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .input-field {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: #ffffff;
+    }
+    .input-field:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .category-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .chip.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+    .btn-primary {
+      width: 100%;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:active {
+      background: #1d4ed8;
+      transform: scale(0.98);
+    }
+
+    /* 4. 모니터링: 잔액 카드 */
+    .budget-card {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+      transition: background 0.3s;
+    }
+    .budget-card.over-budget {
+      background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+    }
+    .budget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .budget-subtext {
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+    .budget-status-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .budget-amount {
+      font-size: 27px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin: 6px 0 10px 0;
+    }
+    .budget-stats {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      padding-top: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.95;
+    }
+
+    /* 5. 재조율 알림 배너 */
+    .readjust-alert {
+      background: #fffbeb;
+      border: 1.5px solid #fcd34d;
+      border-left: 5px solid #f59e0b;
+      padding: 11px 13px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #92400e;
+      line-height: 1.45;
+      display: none;
+    }
+
+    /* 2. 초안 생성: 오늘의 추천 식당 카드 */
+    .recommend-box {
+      border: 2px solid #3b82f6;
+      background: #eff6ff;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .recommend-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .category-badge {
+      font-size: 11px;
+      font-weight: 800;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 3px 9px;
+      border-radius: 12px;
+    }
+    .restaurant-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-bottom: 4px;
+    }
+    .menu-price {
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .menu-name {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .restaurant-desc {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-secondary {
+      flex: 1;
+      background: #ffffff;
+      color: #2563eb;
+      border: 1.5px solid #2563eb;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .btn-secondary:active {
+      background: #f0f7ff;
+    }
+    .btn-apply {
+      flex: 1.3;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .btn-apply:active {
+      background: #1d4ed8;
+    }
+
+    /* 3. 실행 기록: 입력 폼 */
+    .record-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+    .form-row > * {
+      flex: 1;
+    }
+    .btn-record {
+      background: #059669;
+      color: #ffffff;
+      border: none;
+      padding: 11px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 2px;
+      transition: background 0.15s;
+    }
+    .btn-record:active {
+      background: #047857;
+    }
+
+    /* 4. 모니터링: 기록 목록 */
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .record-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .record-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .record-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+    .record-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .record-cat {
+      font-size: 10px;
+      font-weight: 700;
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: #475569;
+    }
+    .record-date-tag {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .record-meta {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .record-review {
+      font-size: 11px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .btn-del {
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 8px;
+      transition: background 0.15s;
+    }
+    .btn-del:active {
+      background: #fecaca;
+    }
+    .empty-msg {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- 상단 테스트 도구 바 -->
+  <div class="test-toolbar">
+    <div class="test-date-badge" id="displayAppDate">📅 2026-11-17</div>
+    <div class="test-btn-group">
+      <button type="button" class="btn-test" id="btnNextDay">다음 날로 이동</button>
+      <button type="button" class="btn-test btn-reset" id="btnResetAll">처음부터 다시</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- 화면 1: 초기 설정 (입력값 영역) -->
+    <div id="setupView" class="card" style="display: none;">
+      <h2 class="section-title">🍽️ 맞춤 식당 설정</h2>
+      <div class="form-group">
+        <label class="form-label" for="inputBudget">한 끼 목표 예산 (원)</label>
+        <input type="text" inputmode="numeric" id="inputBudget" class="input-field" placeholder="예: 8000 또는 8,000" value="8,000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">선호 카테고리 (최소 1개 이상 복수 선택)</label>
+        <div class="category-chips" id="setupChips">
+          <div class="chip active" data-cat="한식">한식 🍚</div>
+          <div class="chip active" data-cat="중식">중식 🥟</div>
+          <div class="chip active" data-cat="일식">일식 🍣</div>
+          <div class="chip active" data-cat="양식">양식 🍝</div>
+          <div class="chip active" data-cat="분식">분식 🍢</div>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" id="btnSaveSetup">설정 완료하고 추천받기</button>
+    </div>
+
+    <!-- 화면 2: 메인 대시보드 (초안 생성, 모니터링, 실행 기록, 재조율) -->
+    <div id="mainView" style="display: none; flex-direction: column; gap: 14px;">
+      
+      <!-- 4. 모니터링: 한눈에 보여 줄 것 -->
+      <div id="budgetCard" class="budget-card">
+        <div class="budget-header">
+          <span class="budget-subtext">오늘 쓸 수 있는 권장 식비 잔액</span>
+          <span class="budget-status-tag" id="budgetStatusTag">정상</span>
+        </div>
+        <div class="budget-amount" id="displayRemaining">8,000원</div>
+        <div class="budget-stats">
+          <span>한 끼 목표: <strong id="displayGoal">8,000원</strong></span>
+          <span>오늘 지출: <strong id="displaySpent">0원</strong></span>
+        </div>
+      </div>
+
+      <!-- 5. 재조율 알림 배너 -->
+      <div id="readjustBanner" class="readjust-alert">
+        ⚠️ <strong>연속 식사 감지 (재조율)</strong>: 최근 2회 연속 <span id="readjustCat" style="font-weight: 800; text-decoration: underline;">중식</span> 메뉴를 드셔서, 이번 추천에서는 해당 종류를 제외하고 다른 메뉴를 추천합니다!
+      </div>
+
+      <!-- 2. 초안 생성: 오늘의 추천 식당 -->
+      <div class="card recommend-box">
+        <div class="recommend-header">
+          <span class="category-badge" id="recBadge">한식</span>
+          <span style="font-size: 11px; color: #2563eb; font-weight: 700;">✨ 맞춤 추천</span>
+        </div>
+        <div class="restaurant-name" id="recName">학식 1번가</div>
+        <div class="menu-price">대표 메뉴: <span class="menu-name" id="recMenu">제육볶음정식</span> (<span id="recPrice" style="font-weight: 700; color: #2563eb;">7,000원</span>)</div>
+        <div class="restaurant-desc" id="recDesc">학생회관 1층 학식, 든든한 고기 반찬이 푸짐하게 나옵니다.</div>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" id="btnRefreshRec">다른 식당 추천 🔄</button>
+          <button type="button" class="btn-apply" id="btnUseRec">이 식당 먹으러 가기</button>
+        </div>
+      </div>
+
+      <!-- 3. 실행 기록: 오늘 식사 기록 폼 -->
+      <div class="card">
+        <h3 class="section-title">📝 오늘 식사 기록</h3>
+        <div class="record-form">
+          <div class="form-row">
+            <input type="text" id="recordName" class="input-field" placeholder="식당 이름">
+            <select id="recordCat" class="input-field" style="max-width: 115px; font-weight: 600;">
+              <option value="한식">한식 🍚</option>
+              <option value="중식">중식 🥟</option>
+              <option value="일식">일식 🍣</option>
+              <option value="양식">양식 🍝</option>
+              <option value="분식">분식 🍢</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <input type="text" inputmode="numeric" id="recordAmount" class="input-field" placeholder="실제 쓴 금액 (원)">
+            <input type="text" id="recordReview" class="input-field" placeholder="한 줄 평 (맛, 분위기 등)">
+          </div>
+          <button type="button" class="btn-record" id="btnAddRecord">식사 기록 저장하기</button>
+        </div>
+      </div>
+
+      <!-- 4. 모니터링: 최근 식사 기록 목록 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 class="section-title" style="margin-bottom: 0;">📊 최근 식사 기록</h3>
+          <span style="font-size: 11px; color: #64748b;" id="recordCountLabel">총 0건</span>
+        </div>
+        <div class="record-list" id="recordList">
+          <div class="empty-msg">아직 남긴 식사 기록이 없습니다.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  /* 대학가 가성비 식당 데이터셋 (15곳) */
+  const RESTAURANT_DATA = [
+    { name: '학식 1번가', category: '한식', menu: '제육볶음정식', price: 6500, desc: '학생회관 1층 학식, 든든하고 매콤한 제육볶음과 반찬 세트.' },
+    { name: '덕명골 찌개마을', category: '한식', menu: '돼지김치찌개', price: 8000, desc: '공깃밥과 라면사리가 무한리필되는 얼큰하고 칼칼한 김치찌개 맛집.' },
+    { name: '정문 골목 덮밥', category: '한식', menu: '직화불고기덮밥', price: 7500, desc: '불향 가득한 불고기에 반숙 계란이 어우러진 혼밥 인기 식당.' },
+    { name: '수통골 순대국', category: '한식', menu: '토종 순대국밥', price: 8000, desc: '직접 끓인 사골육수에 고기가 듬뿍 들어간 든든한 국밥집.' },
+    
+    { name: '착한 만리장성', category: '중식', menu: '짜장면+군만두 세트', price: 6000, desc: '착한 가격에 쫄깃한 면발과 바삭한 만두까지 즐기는 학생 인기점.' },
+    { name: '홍콩반점 덕명점', category: '중식', menu: '고기짬뽕', price: 7500, desc: '진한 불맛 국물과 신선한 야채가 듬뿍 들어간 정통 짬뽕.' },
+    { name: '캠퍼스 마라탕', category: '중식', menu: '마라탕 1인 기본', price: 8500, desc: '원하는 재료를 직접 골라 담아 끓이는 얼얼하고 깊은 마라탕.' },
+    
+    { name: '도쿄 돈까스', category: '일식', menu: '수제 등심카츠', price: 8500, desc: '국내산 냉장육으로 튀겨 겉은 바삭하고 속은 육즙 가득한 수제 돈까스.' },
+    { name: '미소야 카레', category: '일식', menu: '치킨가라아게 카레', price: 7500, desc: '부드러운 일본식 숙성 카레와 바삭한 순살 닭튀김의 찰떡궁합.' },
+    { name: '우동 한그릇', category: '일식', menu: '어묵우동+유부초밥', price: 6500, desc: '따끈한 국물에 쫄깃한 우동 면발, 고소한 유부초밥 세트.' },
+    
+    { name: '파스타 존', category: '양식', menu: '베이컨 토마토 파스타', price: 8000, desc: '진한 토마토 소스와 짭조름한 베이컨이 듬뿍 들어간 대학가 파스타.' },
+    { name: '청춘 수제버거', category: '양식', menu: '치즈버거 세트', price: 7500, desc: '두툼한 소고기 패티와 갓 튀긴 감자튀김이 일품인 가성비 수제버거.' },
+    { name: '피자 슬라이스', category: '양식', menu: '조각피자 세트', price: 6500, desc: '뉴욕식 조각피자와 시원한 탄산음료를 간편하게 즐기는 곳.' },
+    
+    { name: '학교앞 분식', category: '분식', menu: '떡튀순 세트', price: 6000, desc: '매콤달콤 쌀떡볶이에 바삭한 모둠튀김과 찰순대까지 모두 담은 세트.' },
+    { name: '통통 김밥', category: '분식', menu: '참치김밥+라면', price: 6500, desc: '속이 꽉 찬 참치마요 김밥과 얼큰한 라면의 실패 없는 국룰 조합.' }
+  ];
+
+  /* localStorage 키 */
+  const STORAGE_KEYS = {
+    settings: 'restaurant_app_settings',
+    currentDate: 'restaurant_app_current_date',
+    records: 'restaurant_app_records',
+    currentRec: 'restaurant_app_current_rec'
+  };
+
+  /* 전역 상태 */
+  let appState = {
+    settings: null,
+    currentDate: '2026-11-17',
+    records: [],
+    currentRec: null
+  };
+
+  /* 금액 파싱 헬퍼 (쉼표, 공백 제거 후 정수 변환) */
+  function parseAmount(val) {
+    if (val === null || val === undefined) return NaN;
+    const cleaned = String(val).replace(/,/g, '').replace(/원/g, '').trim();
+    if (!cleaned) return NaN;
+    const num = Number(cleaned);
+    if (!Number.isFinite(num)) return NaN;
+    return Math.floor(num);
+  }
+
+  /* 금액 표시 헬퍼 (쉼표 포함 한국어 포맷) */
+  function formatMoney(amount) {
+    if (isNaN(amount) || amount === null) return '0원';
+    return amount.toLocaleString('ko-KR') + '원';
+  }
+
+  /* 앱 초기화 */
+  function initApp() {
+    loadData();
+    bindEvents();
+    render();
+  }
+
+  /* 로컬 스토리지 불러오기 */
+  function loadData() {
+    try {
+      const savedDate = localStorage.getItem(STORAGE_KEYS.currentDate);
+      appState.currentDate = savedDate ? savedDate : '2026-11-17';
+
+      const savedSettings = localStorage.getItem(STORAGE_KEYS.settings);
+      appState.settings = savedSettings ? JSON.parse(savedSettings) : null;
+
+      const savedRecords = localStorage.getItem(STORAGE_KEYS.records);
+      appState.records = savedRecords ? JSON.parse(savedRecords) : [];
+
+      const savedRec = localStorage.getItem(STORAGE_KEYS.currentRec);
+      appState.currentRec = savedRec ? JSON.parse(savedRec) : null;
+    } catch (e) {
+      console.error('스토리지 불러오기 오류:', e);
+    }
+  }
+
+  /* 이벤트 바인딩 */
+  function bindEvents() {
+    // 칩 선택 토글
+    document.querySelectorAll('#setupChips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('active');
+      });
+    });
+
+    // 1. 설정 저장 버튼
+    document.getElementById('btnSaveSetup').addEventListener('click', handleSaveSetup);
+
+    // 상단 테스트 버튼: 다음 날로 이동
+    document.getElementById('btnNextDay').addEventListener('click', handleNextDay);
+
+    // 상단 테스트 버튼: 처음부터 다시
+    document.getElementById('btnResetAll').addEventListener('click', handleResetAll);
+
+    // 2. 다른 식당 추천 버튼
+    document.getElementById('btnRefreshRec').addEventListener('click', () => {
+      pickRecommendation(true);
+      render();
+    });
+
+    // 추천 식당 바로 쓰기 버튼
+    document.getElementById('btnUseRec').addEventListener('click', () => {
+      if (!appState.currentRec) return;
+      document.getElementById('recordName').value = appState.currentRec.name;
+      document.getElementById('recordCat').value = appState.currentRec.category;
+      document.getElementById('recordAmount').value = appState.currentRec.price.toLocaleString('ko-KR');
+      document.getElementById('recordReview').focus();
+    });
+
+    // 3. 식사 기록 저장 버튼
+    document.getElementById('btnAddRecord').addEventListener('click', handleAddRecord);
+
+    // 4. 식사 기록 삭제 (이벤트 위임)
+    document.getElementById('recordList').addEventListener('click', (e) => {
+      const delBtn = e.target.closest('[data-action="delete"]');
+      if (delBtn) {
+        const id = Number(delBtn.getAttribute('data-id'));
+        deleteRecord(id);
+      }
+    });
+  }
+
+  /* 1. 입력값 저장 처리 */
+  function handleSaveSetup() {
+    const rawVal = document.getElementById('inputBudget').value;
+    const budgetInput = parseAmount(rawVal);
+    const selectedChips = document.querySelectorAll('#setupChips .chip.active');
+    const selectedCats = Array.from(selectedChips).map(c => c.getAttribute('data-cat'));
+
+    // 판단 규칙: 만약 숫자 조건 불만족 시 경고
+    if (isNaN(budgetInput) || budgetInput < 1000) {
+      alert('올바른 예산을 입력해 주세요 (1,000원 이상 숫자)');
+      return;
+    }
+    if (selectedCats.length === 0) {
+      alert('최소 1개 이상의 선호 카테고리를 선택해 주세요');
+      return;
+    }
+
+    appState.settings = {
+      budget: budgetInput,
+      categories: selectedCats
+    };
+    try {
+      localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(appState.settings));
+    } catch (e) {}
+
+    // 초안 추천 생성
+    pickRecommendation(false);
+    render();
+  }
+
+  /* 5. 재조율 분석: 최근 2회 연속 동일 카테고리 여부 판별 */
+  function getReadjustBannedCategory() {
+    if (appState.records.length < 2) return null;
+    const r1 = appState.records[0];
+    const r2 = appState.records[1];
+    if (r1.category && r1.category === r2.category) {
+      return r1.category;
+    }
+    return null;
+  }
+
+  /* 2. 초안 생성 및 추천 (재조율 반영) */
+  function pickRecommendation(isManualRefresh) {
+    if (!appState.settings) return;
+
+    const budget = appState.settings.budget;
+    const categories = appState.settings.categories;
+    const bannedCat = getReadjustBannedCategory();
+
+    // 1단계: 선호 카테고리 및 예산 이하 식당 필터링
+    let candidates = RESTAURANT_DATA.filter(r => {
+      return categories.includes(r.category) && r.price <= budget;
+    });
+
+    // 5. 재조율 규칙 적용: 연속 2회 동일 카테고리인 경우 해당 카테고리 제외
+    if (bannedCat) {
+      const filtered = candidates.filter(r => r.category !== bannedCat);
+      if (filtered.length > 0) {
+        candidates = filtered;
+      }
+    }
+
+    // 만약 예산 이하 조건에 맞는 식당이 없으면 전체 선호 카테고리로 완화
+    if (candidates.length === 0) {
+      candidates = RESTAURANT_DATA.filter(r => categories.includes(r.category));
+    }
+    if (candidates.length === 0) {
+      candidates = RESTAURANT_DATA;
+    }
+
+    // 이전 추천과 다른 식당 우선 선택
+    let pool = candidates;
+    if (candidates.length > 1 && appState.currentRec) {
+      const withoutCurrent = candidates.filter(r => r.name !== appState.currentRec.name);
+      if (withoutCurrent.length > 0) pool = withoutCurrent;
+    }
+
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    appState.currentRec = pool[randomIndex];
+    try {
+      localStorage.setItem(STORAGE_KEYS.currentRec, JSON.stringify(appState.currentRec));
+    } catch (e) {}
+  }
+
+  /* 3. 실행 기록 추가 */
+  function handleAddRecord() {
+    const name = document.getElementById('recordName').value.trim();
+    const cat = document.getElementById('recordCat').value;
+    const rawAmount = document.getElementById('recordAmount').value;
+    const amount = parseAmount(rawAmount);
+    const review = document.getElementById('recordReview').value.trim();
+
+    // 판단 규칙: 금액에 0이나 문자나 음수를 넣었을 때
+    if (!name) {
+      alert('식당 이름을 입력해 주세요.');
+      document.getElementById('recordName').focus();
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      alert('지출 금액을 1원 이상 숫자로 입력해 주세요.');
+      document.getElementById('recordAmount').focus();
+      return;
+    }
+
+    const newRecord = {
+      id: Date.now(),
+      date: appState.currentDate,
+      name: name,
+      category: cat,
+      amount: amount,
+      review: review || '방문 완료'
+    };
+
+    // 최신 기록이 맨 위로 오도록 추가
+    appState.records.unshift(newRecord);
+    try {
+      localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(appState.records));
+    } catch (e) {}
+
+    // 폼 초기화
+    document.getElementById('recordName').value = '';
+    document.getElementById('recordAmount').value = '';
+    document.getElementById('recordReview').value = '';
+
+    // 재조율 규칙 검토를 위해 추천 식당 갱신
+    pickRecommendation(false);
+    render();
+  }
+
+  /* 기록 삭제 */
+  function deleteRecord(id) {
+    appState.records = appState.records.filter(r => r.id !== id);
+    try {
+      localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(appState.records));
+    } catch (e) {}
+    // 재조율 복구를 위해 추천 식당 다시 점검
+    pickRecommendation(false);
+    render();
+  }
+  window.deleteRecord = deleteRecord;
+
+  /* 상단 테스트 버튼: 다음 날로 이동 */
+  function handleNextDay() {
+    const parts = appState.currentDate.split('-');
+    const curDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    curDate.setDate(curDate.getDate() + 1);
+
+    const y = curDate.getFullYear();
+    const m = String(curDate.getMonth() + 1).padStart(2, '0');
+    const d = String(curDate.getDate()).padStart(2, '0');
+    appState.currentDate = `${y}-${m}-${d}`;
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.currentDate, appState.currentDate);
+    } catch (e) {}
+
+    pickRecommendation(false);
+    render();
+  }
+
+  /* 상단 테스트 버튼: 처음부터 다시 */
+  function handleResetAll() {
+    if (confirm('저장된 데이터를 모두 지우고 첫 화면으로 돌아갈까요?')) {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.settings);
+        localStorage.removeItem(STORAGE_KEYS.currentDate);
+        localStorage.removeItem(STORAGE_KEYS.records);
+        localStorage.removeItem(STORAGE_KEYS.currentRec);
+      } catch (e) {}
+
+      appState = {
+        settings: null,
+        currentDate: '2026-11-17',
+        records: [],
+        currentRec: null
+      };
+      render();
+    }
+  }
+
+  /* 전체 화면 렌더링 */
+  function render() {
+    // 날짜 배지 표시
+    document.getElementById('displayAppDate').innerText = `📅 ${appState.currentDate}`;
+
+    if (!appState.settings) {
+      // 1. 설정 화면 표시
+      document.getElementById('setupView').style.display = 'block';
+      document.getElementById('mainView').style.display = 'none';
+      return;
+    }
+
+    // 2. 메인 대시보드 표시
+    document.getElementById('setupView').style.display = 'none';
+    document.getElementById('mainView').style.display = 'flex';
+
+    // 4. 모니터링: 오늘 지출 및 남은 예산 계산
+    const goalBudget = appState.settings.budget;
+    const todayRecords = appState.records.filter(r => r.date === appState.currentDate);
+    const todaySpent = todayRecords.reduce((sum, r) => sum + r.amount, 0);
+    const remaining = goalBudget - todaySpent;
+
+    document.getElementById('displayGoal').innerText = formatMoney(goalBudget);
+    document.getElementById('displaySpent').innerText = formatMoney(todaySpent);
+
+    const budgetCard = document.getElementById('budgetCard');
+    const remainingEl = document.getElementById('displayRemaining');
+    const statusTag = document.getElementById('budgetStatusTag');
+
+    // 판단 규칙: 만약 오늘 남은 돈이 0원보다 적어졌을 때 (초과 시)
+    if (remaining > 0) {
+      budgetCard.classList.remove('over-budget');
+      remainingEl.innerText = `${formatMoney(remaining)} 남음`;
+      statusTag.innerText = '여유';
+      statusTag.style.background = 'rgba(255, 255, 255, 0.2)';
+    } else if (remaining === 0) {
+      budgetCard.classList.remove('over-budget');
+      remainingEl.innerText = '0원 (예산 딱 맞춤!)';
+      statusTag.innerText = '예산 완료';
+      statusTag.style.background = 'rgba(255, 255, 255, 0.25)';
+    } else {
+      budgetCard.classList.add('over-budget');
+      remainingEl.innerText = `${formatMoney(Math.abs(remaining))} 초과! 🚨`;
+      statusTag.innerText = '예산 초과!';
+      statusTag.style.background = 'rgba(255, 255, 255, 0.35)';
+    }
+
+    // 5. 재조율 알림 표시 여부
+    const bannedCat = getReadjustBannedCategory();
+    const banner = document.getElementById('readjustBanner');
+    if (bannedCat) {
+      document.getElementById('readjustCat').innerText = bannedCat;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+
+    // 2. 초안 생성: 추천 식당 카드 렌더
+    if (!appState.currentRec) {
+      pickRecommendation(false);
+    }
+    if (appState.currentRec) {
+      document.getElementById('recBadge').innerText = appState.currentRec.category;
+      document.getElementById('recName').innerText = appState.currentRec.name;
+      document.getElementById('recMenu').innerText = appState.currentRec.menu;
+      document.getElementById('recPrice').innerText = formatMoney(appState.currentRec.price);
+      document.getElementById('recDesc').innerText = appState.currentRec.desc;
+    }
+
+    // 4. 모니터링: 최근 기록 목록 렌더
+    const recordList = document.getElementById('recordList');
+    document.getElementById('recordCountLabel').innerText = `총 ${appState.records.length}건`;
+
+    if (appState.records.length === 0) {
+      recordList.innerHTML = '<div class="empty-msg">아직 남긴 식사 기록이 없습니다.</div>';
+    } else {
+      recordList.innerHTML = appState.records.map(r => `
+        <div class="record-item">
+          <div class="record-info">
+            <div class="record-head">
+              <span class="record-name">${r.name}</span>
+              <span class="record-cat">${r.category}</span>
+              <span class="record-date-tag">${r.date === appState.currentDate ? '오늘' : r.date}</span>
+            </div>
+            <div class="record-meta">${formatMoney(r.amount)}</div>
+            <div class="record-review">“${r.review}”</div>
+          </div>
+          <button type="button" class="btn-del" data-action="delete" data-id="${r.id}">삭제</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  // 앱 실행
+  initApp();
+</script>
+</body>
+</html>
